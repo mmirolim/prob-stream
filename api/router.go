@@ -89,7 +89,10 @@ func New(stdb *stats.DB, apiTimeout int) (*http.ServeMux, error) {
 	m.HandleFunc("/real-stat", setCtx(stdb, timeout, basicTelemetry(realStat)))
 
 	// get probabilistic stat for defined key
-	m.HandleFunc("/prob-stat", setCtx(stdb, timeout, basicTelemetry(probStat)))
+	m.HandleFunc("/prob-stat", setCtx(stdb, timeout, basicTelemetry(probUtmStat)))
+
+	// get pids stat
+	m.HandleFunc("/prob-stat-unique-pids", setCtx(stdb, timeout, basicTelemetry(probPidStat)))
 
 	// and defined segment like edg, utm_source, utm_medium, device_type
 	// TODO name params in standard way
