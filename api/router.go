@@ -6,7 +6,8 @@ import (
 	"log"
 	"net/http"
 	"time"
-	ds "xr/basic-ltv-aggregator/datastore"
+
+	"github.com/mmirolim/prob-stream/stat"
 
 	"golang.org/x/net/context"
 )
@@ -51,7 +52,7 @@ func basicTelemetry(h CtxHandlerFunc) CtxHandlerFunc {
 	}
 }
 
-func setCtx(stdb *ds.StatDB, timeout time.Duration, h CtxHandlerFunc) http.HandlerFunc {
+func setCtx(stdb *stats.DB, timeout time.Duration, h CtxHandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		// pass connections to eventdb and statdb
@@ -68,7 +69,7 @@ func setCtx(stdb *ds.StatDB, timeout time.Duration, h CtxHandlerFunc) http.Handl
 // New return mux with handlers registered
 // connections to event and stat database
 // api timeout in seconds
-func New(stdb *ds.StatDB, apiTimeout int) (*http.ServeMux, error) {
+func New(stdb *stats.DB, apiTimeout int) (*http.ServeMux, error) {
 	if stdb == nil {
 		return nil, ErrStatStorage
 	}
@@ -85,10 +86,10 @@ func New(stdb *ds.StatDB, apiTimeout int) (*http.ServeMux, error) {
 	m.HandleFunc("/collect-stats", setCtx(stdb, timeout, basicTelemetry(collectStat)))
 
 	// get real stat for defined key
-	m.HandleFunc("/real-stat", setCtx(evdb, stdb, timeout, basicTelemetry(realStat)))
+	m.HandleFunc("/real-stat", setCtx(stdb, timeout, basicTelemetry(realStat)))
 
 	// get probabilistic stat for defined key
-	m.HandleFunc("/prob-stat", setCtx(evdb, stdb, timeout, basicTelemetry(probStat)))
+	m.HandleFunc("/prob-stat", setCtx(stdb, timeout, basicTelemetry(probStat)))
 
 	// and defined segment like edg, utm_source, utm_medium, device_type
 	// TODO name params in standard way

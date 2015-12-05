@@ -2,6 +2,8 @@ package api
 
 import (
 	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/mmirolim/prob-stream/stat"
 
@@ -11,9 +13,9 @@ import (
 const (
 	// url params name
 	statKey = "key"
-	pid     = "pid"
-	utmm    = "utmm"
-	utms    = "utms"
+	pidKey  = "pid"
+	utmmKey = "utmm"
+	utmsKey = "utms"
 )
 
 func collectStat(ctx context.Context, w http.ResponseWriter, r *http.Request) *HttpError {
@@ -22,7 +24,20 @@ func collectStat(ctx context.Context, w http.ResponseWriter, r *http.Request) *H
 		return &HttpError{ErrStatStorage, http.StatusInternalServerError}
 	}
 
-	respJson(w, "stats collected")
+	// extract data from url
+	vals, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		return &HttpError{err, http.StatusInternalServerError}
+	}
+
+	pid := vals.Get(pidKey)
+	utmm := vals.Get(utmmKey)
+	utms := vals.Get(utmsKey)
+
+	stdb.Collect(pid, utmm, utms)
+
+	respJson(w, pid+":"+utmm+":"+utms)
+
 	return nil
 }
 
@@ -31,8 +46,13 @@ func realStat(ctx context.Context, w http.ResponseWriter, r *http.Request) *Http
 	if !ok {
 		return &HttpError{ErrStatStorage, http.StatusInternalServerError}
 	}
-
-	respJson(w, "stats collected")
+	// extract data from url
+	vals, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		return &HttpError{err, http.StatusInternalServerError}
+	}
+	result := stdb.Count(vals.Get(statKey))
+	respJson(w, "stats for "+vals.Get(statKey)+" "+strconv.FormatUint(result, 10))
 	return nil
 }
 
@@ -41,7 +61,13 @@ func probStat(ctx context.Context, w http.ResponseWriter, r *http.Request) *Http
 	if !ok {
 		return &HttpError{ErrStatStorage, http.StatusInternalServerError}
 	}
+	// extract data from url
+	vals, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		return &HttpError{err, http.StatusInternalServerError}
+	}
+	result := stdb.Count(vals.Get(statKey))
+	respJson(w, "stats for "+vals.Get(statKey)+" "+strconv.FormatUint(result, 10))
 
-	respJson(w, "stats collected")
 	return nil
 }
