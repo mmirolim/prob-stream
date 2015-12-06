@@ -129,14 +129,29 @@ func (db *DB) watch() {
 	go func() {
 		var err error
 		// init if not exists
+		// TODO find better way
 		m.Lock()
-		err = db.save("hllpids")
-		if err != nil {
-			log.Println("hllpids save error", err)
+		// check if filters exists
+		if ok, err := db.loadIfExist("hllpids", hllPids); !ok && err != nil {
+			err = db.save("hllpids")
+			if err != nil {
+				log.Println("hllpids save error", err)
+			}
+		} else if err != nil {
+			log.Println("stat loadIfExist hllpids error ", err)
+		} else {
+			log.Println("loading data from db for hllpids")
 		}
-		err = db.save("cmsanykey")
-		if err != nil {
-			log.Println("hllpids save error", err)
+
+		if ok, err := db.loadIfExist("cmsanykey", cmsAnyKey); !ok && err != nil {
+			err = db.save("cmsanykey")
+			if err != nil {
+				log.Println("cmsanykey save error", err)
+			}
+		} else if err != nil {
+			log.Println("stat loadIfExist cmsanykey error ", err)
+		} else {
+			log.Println("loading data from db for cmsanykey")
 		}
 		m.Unlock()
 		for {
@@ -157,6 +172,26 @@ func (db *DB) watch() {
 			m.Unlock()
 		}
 	}()
+}
+
+// check if data with key name exist
+func (db *DB) loadIfExist(key string, data Serializable) (bool, error) {
+	var blob []byte
+	err := db.stats.QueryRow("SELECT data FROM "+db.tbl+" WHERE key=$1", key).Scan(&blob)
+	switch {
+	case err == sql.ErrNoRows:
+		return false, nil
+	case err != nil:
+		return false, err
+	}
+	// deserialize data back
+	// TODO they should be indentical serial and desiarl objects
+	_, err = data.ReadDataFrom(bytes.NewReader(blob))
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // serialize data and update it

@@ -117,7 +117,7 @@ func probPidStat(ctx context.Context, w http.ResponseWriter, r *http.Request) *H
 	}
 
 	result = stdb.CountUniquePids()
-	respJson(w, "unique pids number"+strconv.FormatUint(result, 10))
+	respJson(w, "unique pids number "+strconv.FormatUint(result, 10))
 
 	return nil
 }
