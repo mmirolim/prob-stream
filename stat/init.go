@@ -27,10 +27,10 @@ func init() {
 	var err error
 	// TODO filters params store in configs and database
 	// count unique pids
-	hllPids, err = boom.NewDefaultHyperLogLog(0.1)
+	hllPids, err = boom.NewDefaultHyperLogLog(0.001)
 	fatalOnErr(err)
 
-	cmsAnyKey = boom.NewCountMinSketch(0.001, 0.99)
+	cmsAnyKey = boom.NewCountMinSketch(0.000001, 0.98)
 
 	topkPids = boom.NewTopK(0.001, 0.99, 5)
 	topkUtmm = boom.NewTopK(0.001, 0.99, 5)
@@ -132,7 +132,7 @@ func (db *DB) watch() {
 		// TODO find better way
 		m.Lock()
 		// check if filters exists
-		if ok, err := db.loadIfExist("hllpids", hllPids); !ok && err != nil {
+		if ok, err := db.loadIfExist("hllpids", hllPids); !ok && err == nil {
 			err = db.save("hllpids")
 			if err != nil {
 				log.Println("hllpids save error", err)
@@ -143,7 +143,7 @@ func (db *DB) watch() {
 			log.Println("loading data from db for hllpids")
 		}
 
-		if ok, err := db.loadIfExist("cmsanykey", cmsAnyKey); !ok && err != nil {
+		if ok, err := db.loadIfExist("cmsanykey", cmsAnyKey); !ok && err == nil {
 			err = db.save("cmsanykey")
 			if err != nil {
 				log.Println("cmsanykey save error", err)
@@ -184,6 +184,7 @@ func (db *DB) loadIfExist(key string, data Serializable) (bool, error) {
 	case err != nil:
 		return false, err
 	}
+
 	// deserialize data back
 	// TODO they should be indentical serial and desiarl objects
 	_, err = data.ReadDataFrom(bytes.NewReader(blob))

@@ -40,7 +40,12 @@ func collectStat(ctx context.Context, w http.ResponseWriter, r *http.Request) *H
 	}
 	fmt.Println("file name ", file)
 	fmt.Println("small test data ", "./testdata/small-data-1000/test-data.csv")
-	fpath := "./testdata/small-data-1000/test-data.csv"
+	fpath := ""
+	if file == "big" {
+		fpath = "./testdata/big-data-1e7-1e6/test-data.csv"
+	} else {
+		fpath = "./testdata/small-data-1000/test-data.csv"
+	}
 	// read file
 	f, err := os.Open(fpath)
 	if err != nil {
@@ -65,7 +70,7 @@ func collectStat(ctx context.Context, w http.ResponseWriter, r *http.Request) *H
 		}
 		if len(rec) == 3 {
 			stdb.Collect(rec[0], rec[1], rec[2])
-			if counter%100 == 0 {
+			if counter%50000 == 0 {
 				fmt.Println("record from test data", rec)
 			}
 		}
